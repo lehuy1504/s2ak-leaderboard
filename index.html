@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S2AK — Bảng Xếp Hạng</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #FFD700;
+    --silver: #C0C0C0;
+    --bronze: #CD7F32;
+    --accent: #00E5FF;
+    --red: #FF3B3B;
+    --bg: #060A0F;
+    --bg2: #0C1520;
+    --bg3: #111E2E;
+    --border: rgba(0,229,255,0.15);
+    --text: #E0EAF5;
+    --muted: #4A6080;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .header-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 96px);
+    letter-spacing: 6px;
+    line-height: 0.9;
+    color: white;
+    text-shadow: 0 0 60px rgba(0,229,255,0.3), 0 0 120px rgba(0,229,255,0.1);
+  }
+
+  .header h1 span {
+    color: var(--accent);
+  }
+
+  .header-sub {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-top: 14px;
+    text-transform: uppercase;
+  }
+
+  .total-score {
+    display: inline-block;
+    margin-top: 20px;
+    background: linear-gradient(135deg, rgba(0,229,255,0.1), rgba(0,229,255,0.05));
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .total-score span {
+    color: white;
+    font-size: 16px;
+  }
+
+  .header-meta {
+    margin-top: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+
+  .meta-time { color: rgba(0,229,255,0.6); }
+  .meta-sep { margin: 0 6px; opacity: 0.4; }
+  .meta-from { color: rgba(255,255,255,0.35); }
+
+  /* SERVER RANKINGS */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-left: 4px;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+  }
+
+  .server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 50px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .server-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .server-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.04), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .server-card:hover::before { opacity: 1; }
+  .server-card:hover { border-color: rgba(0,229,255,0.35); transform: translateY(-1px); }
+
+  .server-card.rank-1 { border-color: rgba(255,215,0,0.4); background: linear-gradient(135deg, rgba(255,215,0,0.08), var(--bg2)); }
+  .server-card.rank-2 { border-color: rgba(192,192,192,0.3); background: linear-gradient(135deg, rgba(192,192,192,0.06), var(--bg2)); }
+  .server-card.rank-3 { border-color: rgba(205,127,50,0.3); background: linear-gradient(135deg, rgba(205,127,50,0.06), var(--bg2)); }
+
+  .server-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .rank-1 .server-rank { color: var(--gold); text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+  .rank-2 .server-rank { color: var(--silver); }
+  .rank-3 .server-rank { color: var(--bronze); }
+  .server-card:not(.rank-1):not(.rank-2):not(.rank-3) .server-rank { color: var(--muted); }
+
+  .server-info { flex: 1; min-width: 0; }
+
+  .server-id {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .server-id span {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 2px;
+    font-weight: normal;
+  }
+
+  .server-pts {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .server-pts-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* FILTERS */
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .filter-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 7px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: rgba(0,229,255,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 180px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 7px 16px;
+    border-radius: 4px;
+    outline: none;
+    letter-spacing: 1px;
+    transition: border-color 0.15s;
+  }
+
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+
+  /* TABLE */
+  .table-wrap {
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .player-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .player-table thead tr {
+    border-bottom: 2px solid rgba(0,229,255,0.2);
+  }
+
+  .player-table th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+
+  .player-table th:hover { color: var(--accent); }
+  .player-table th.sorted { color: var(--accent); }
+
+  .player-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.1s;
+    animation: rowIn 0.3s ease both;
+  }
+
+  .player-table tbody tr:hover {
+    background: rgba(0,229,255,0.04);
+  }
+
+  .player-table td {
+    padding: 10px 12px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  /* Rank badge */
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    border-radius: 3px;
+  }
+
+  .rank-badge.top1 { background: rgba(255,215,0,0.15); color: var(--gold); border: 1px solid rgba(255,215,0,0.4); }
+  .rank-badge.top2 { background: rgba(192,192,192,0.1); color: var(--silver); border: 1px solid rgba(192,192,192,0.3); }
+  .rank-badge.top3 { background: rgba(205,127,50,0.1); color: var(--bronze); border: 1px solid rgba(205,127,50,0.3); }
+  .rank-badge.top10 { color: rgba(255,100,100,0.9); background: rgba(255,50,50,0.05); border: 1px solid rgba(255,50,50,0.2); }
+  .rank-badge.normal { color: var(--muted); background: transparent; border: 1px solid rgba(255,255,255,0.06); }
+  .rank-badge.inactive { color: var(--muted); opacity: 0.4; }
+
+  /* Player name */
+  .player-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+
+  .player-name.inactive { color: var(--muted); opacity: 0.5; font-weight: 400; }
+
+  /* Alliance tag */
+  .alliance-tag {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  .tag-S2AK { background: rgba(0,229,255,0.12); color: var(--accent); border: 1px solid rgba(0,229,255,0.25); }
+  .tag-AKS1 { background: rgba(255,160,0,0.12); color: #FFA000; border: 1px solid rgba(255,160,0,0.25); }
+  .tag-AKS2 { background: rgba(100,220,100,0.1); color: #64DC64; border: 1px solid rgba(100,220,100,0.2); }
+  .tag-AKS3 { background: rgba(200,100,255,0.1); color: #C864FF; border: 1px solid rgba(200,100,255,0.2); }
+  .tag-RP { background: rgba(255,80,80,0.1); color: #FF5050; border: 1px solid rgba(255,80,80,0.2); }
+  .tag-none { background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.08); }
+
+  /* Points */
+  .pts-cell {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-align: right;
+  }
+
+  .pts-high { color: var(--gold); }
+  .pts-mid { color: #88BBDD; }
+  .pts-low { color: var(--muted); }
+  .pts-zero { color: var(--muted); opacity: 0.3; }
+
+  /* Progress bar */
+  .pts-bar {
+    height: 2px;
+    background: var(--bg3);
+    border-radius: 1px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+
+  .pts-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    background: linear-gradient(90deg, var(--accent), rgba(0,229,255,0.3));
+  }
+
+  /* Stats footer */
+  .stats-footer {
+    margin-top: 30px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+
+  .stat-pill {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .stat-pill strong {
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+  }
+
+  .count-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-left: 10px;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .player-table th:nth-child(3),
+    .player-table td:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-tag">// Alliance Score Board — Server 174</div>
+    <h1>S2<span>AK</span></h1>
+    <div class="header-sub">Bảng Xếp Hạng Liên Minh</div>
+    <div class="total-score">TỔNG ĐIỂM &nbsp;›&nbsp; <span id="totalDisplay">95,390,400</span></div>
+    <div class="header-meta">
+      <span class="meta-time">🕐 Cập nhật: 7/3/2026 — 9:57:04 UTC</span>
+      <span class="meta-sep"> · </span>
+      <span class="meta-from">From Tabi 174 with love 💙</span>
+    </div>
+  </div>
+
+  <!-- SERVER RANKINGS -->
+  <div class="section-title">Xếp Hạng Server</div>
+  <div class="server-grid" id="serverGrid"></div>
+
+  <!-- PLAYER TABLE -->
+  <div class="section-title" style="margin-bottom:12px;">
+    Thành Viên
+    <span class="count-badge" id="countBadge"></span>
+  </div>
+
+  <div class="filters">
+    <input class="search-box" type="text" id="searchBox" placeholder="Tìm tên người chơi...">
+    <button class="filter-btn active" data-filter="all">Tất Cả</button>
+    <button class="filter-btn" data-filter="S2AK">S2AK</button>
+    <button class="filter-btn" data-filter="AKS1">AKS1</button>
+    <button class="filter-btn" data-filter="AKS2">AKS2</button>
+    <button class="filter-btn" data-filter="AKS3">AKS3</button>
+    <button class="filter-btn" data-filter="active">Đang Hoạt Động</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="player-table">
+      <thead>
+        <tr>
+          <th data-sort="rank" class="sorted">HẠNG ▾</th>
+          <th data-sort="name">TÊN</th>
+          <th data-sort="alliance">LIÊN MINH</th>
+          <th data-sort="pts" style="text-align:right">ĐIỂM</th>
+        </tr>
+      </thead>
+      <tbody id="playerBody"></tbody>
+    </table>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-footer" id="statsFooter"></div>
+
+</div>
+
+<script>
+const servers = [
+  {rank:1, id:174, pts:92434200},
+  {rank:2, id:85, pts:62431000},
+  {rank:3, id:115, pts:61181200},
+  {rank:4, id:47, pts:55010200},
+  {rank:5, id:395, pts:26099200},
+  {rank:6, id:16, pts:22731000},
+  {rank:7, id:467, pts:17710000},
+  {rank:8, id:554, pts:17391000},
+];
+
+const players = [
+  {id:8010298,name:"ᵛᶰシ TSGM S2 AK",alliance:"S2AK",rank:1,pts:2694000},
+  {id:10401700,name:"LifePanther",alliance:"S2AK",rank:2,pts:2639200},
+  {id:10428452,name:"PhaGame ᵛᶰシ",alliance:"S2AK",rank:3,pts:2618000},
+  {id:1987000,name:"Martinus",alliance:"S2AK",rank:8,pts:2360200},
+  {id:3639092,name:"QUEENisabella01",alliance:"S2AK",rank:9,pts:2305600},
+  {id:5200714,name:"ᵛᶰシ ThànhThư",alliance:"S2AK",rank:12,pts:2255000},
+  {id:12853436,name:"ᴱᵛᴳ Côm ˢᵖᵃʳᵗᵃ",alliance:"S2AK",rank:13,pts:2219800},
+  {id:9457214,name:"Công Tôn Jack",alliance:"S2AK",rank:14,pts:2183000},
+  {id:2435704,name:"BLIИEY",alliance:"S2AK",rank:16,pts:2156000},
+  {id:5344432,name:"ＰＲＩＤＥᴮᵃᵈᴮᵒʸ",alliance:"S2AK",rank:17,pts:2147200},
+  {id:11930740,name:"Aphroᵛⁿ",alliance:"S2AK",rank:18,pts:2101000},
+  {id:3052723,name:"JoJoTaRo",alliance:"S2AK",rank:20,pts:2079000},
+  {id:4228707,name:"ᴮᵀⱽPakLemon",alliance:"S2AK",rank:26,pts:1933800},
+  {id:11628578,name:"ᵛⁿ Đạt BT",alliance:"S2AK",rank:31,pts:1859000},
+  {id:5412043,name:"WisDomᴮᵃᵈᴮᵒʸ",alliance:"S2AK",rank:35,pts:1815000},
+  {id:11107438,name:"ᵉᵐbi blink",alliance:"S2AK",rank:38,pts:1733600},
+  {id:12210549,name:"ᴮᵃᵇᶦStrome",alliance:"S2AK",rank:40,pts:1716600},
+  {id:4585351,name:"Konan S2 Ak",alliance:"S2AK",rank:41,pts:1716000},
+  {id:4612026,name:"大鲫鱼の猫",alliance:"S2AK",rank:43,pts:1700000},
+  {id:5482522,name:"AoFNONᴮᵃᵈᴮᵒʸ",alliance:"S2AK",rank:47,pts:1639000},
+  {id:1872070,name:"General Ken",alliance:"S2AK",rank:48,pts:1637000},
+  {id:3773752,name:"ᴮᴬᴰｼPrinceJ",alliance:"AKS1",rank:49,pts:1606000},
+  {id:12927471,name:"ᶦⁿᵛᶦᶜᵗᵘˢ TeePham",alliance:"S2AK",rank:52,pts:1581800},
+  {id:9328438,name:"mp4xd",alliance:"S2AK",rank:54,pts:1551200},
+  {id:9211288,name:"ＳＡＮＪＩᴬᴮᴿᴼ",alliance:"S2AK",rank:57,pts:1529000},
+  {id:9918750,name:"Indomie ʕᵔᴥᵔʔ",alliance:"S2AK",rank:62,pts:1467400},
+  {id:12170763,name:"ᴷᴼᴰ Rules of Joy",alliance:"S2AK",rank:64,pts:1440200},
+  {id:10775144,name:"MrThai 67",alliance:"S2AK",rank:69,pts:1407000},
+  {id:10337737,name:"ᵛᶰシ Pin S2 AK",alliance:"S2AK",rank:72,pts:1397000},
+  {id:4611103,name:"默小楚valar",alliance:"S2AK",rank:73,pts:1390400},
+  {id:4612173,name:"骑士の猫",alliance:"S2AK",rank:80,pts:1335400},
+  {id:4613769,name:"幸运の猫",alliance:"S2AK",rank:84,pts:1302400},
+  {id:5352778,name:"ᵀᴿツ千乇么尺 ꜱ2 ᴀᴋ",alliance:"S2AK",rank:97,pts:1232000},
+  {id:7971271,name:"TSGM KONAN S2",alliance:"S2AK",rank:98,pts:1225400},
+  {id:8894695,name:"Poseidontran",alliance:"S2AK",rank:99,pts:1218800},
+  {id:12010548,name:"JkayLapoule",alliance:"S2AK",rank:103,pts:1196000},
+  {id:1801355,name:"KENWOOD 㞧",alliance:"S2AK",rank:109,pts:1155000},
+  {id:5486872,name:"CTør",alliance:"S2AK",rank:112,pts:1137400},
+  {id:5219554,name:"Watëe ᴴᵁᴹᵀᴼ",alliance:"S2AK",rank:115,pts:1124000},
+  {id:1699983,name:"Px13",alliance:"S2AK",rank:121,pts:1108000},
+  {id:8535014,name:"シJester S2 AK 愛",alliance:"S2AK",rank:125,pts:1100000},
+  {id:2016980,name:"SanYuL898",alliance:"S2AK",rank:124,pts:1100000},
+  {id:2534979,name:"General Feihong",alliance:"S2AK",rank:128,pts:1089000},
+  {id:9294478,name:"ᵛᶰシ Nicoтiɴe S2 AK",alliance:"S2AK",rank:130,pts:1084600},
+  {id:9004116,name:"ᴵᴹᴮ Pickle rick",alliance:"S2AK",rank:136,pts:1044600},
+  {id:13914080,name:"ᴬᵉ ahgnoD",alliance:"S2AK",rank:144,pts:994400},
+  {id:10555421,name:"ʷᶦᶜHafTynz",alliance:"S2AK",rank:149,pts:968000},
+  {id:10360528,name:"DrkBlssm ʲʷʸ",alliance:"S2AK",rank:154,pts:947400},
+  {id:1698613,name:"sweet killer",alliance:"S2AK",rank:156,pts:926200},
+  {id:13909210,name:"ᴬᵉ Báo Sâm",alliance:"S2AK",rank:183,pts:761200},
+  {id:3770178,name:"Most Wanted",alliance:"S2AK",rank:209,pts:660000},
+  {id:7970858,name:"Soul King Brook",alliance:"S2AK",rank:212,pts:658000},
+  {id:451335,name:"义LoadinG义",alliance:"S2AK",rank:232,pts:554400},
+  {id:3830433,name:"ᴮᴬᴰｼdangdang",alliance:"S2AK",rank:246,pts:521400},
+  {id:3890478,name:"ˣᵃᵘSangKurianG",alliance:"S2AK",rank:253,pts:495800},
+  {id:4892428,name:"シDRAG0 M0SS",alliance:"S2AK",rank:256,pts:493800},
+  {id:9118739,name:"KETSU",alliance:"S2AK",rank:263,pts:470200},
+  {id:19141941,name:"73Rules of Farm 6",alliance:"AKS2",rank:265,pts:466400},
+  {id:4596873,name:"TinzzZ",alliance:"S2AK",rank:275,pts:422400},
+  {id:16158360,name:"73Rules of Farm 1",alliance:"AKS2",rank:282,pts:400400},
+  {id:13070033,name:"KENˢᵖᵃʳᵗᵃ",alliance:"S2AK",rank:283,pts:396000},
+  {id:17449640,name:"73Rules of Farm 5",alliance:"AKS2",rank:291,pts:374000},
+  {id:12055485,name:"LifePantherF1",alliance:"AKS1",rank:297,pts:352000},
+  {id:12055477,name:"LifePantherF2",alliance:"AKS1",rank:303,pts:341000},
+  {id:17178132,name:"AKS2 R5",alliance:"AKS2",rank:305,pts:336600},
+  {id:4620551,name:"飞哥CP0の猫",alliance:"S2AK",rank:310,pts:314600},
+  {id:19115761,name:"73Rules of Farm 3",alliance:"AKS2",rank:325,pts:283800},
+  {id:19168777,name:"73Rules of Farm 4",alliance:"AKS2",rank:326,pts:283800},
+  {id:23628863,name:"Poseidontran farm",alliance:"S2AK",rank:327,pts:282200},
+  {id:16164819,name:"73Rules of Farm 2",alliance:"AKS2",rank:335,pts:270600},
+  {id:17178100,name:"AKS3 R5",alliance:"AKS3",rank:337,pts:268200},
+  {id:19638157,name:"AKS1 R5",alliance:"AKS1",rank:342,pts:253000},
+  {id:9463635,name:"TSGM Farm 2",alliance:"AKS1",rank:361,pts:216000},
+  {id:9456572,name:"TSGM Farm 14",alliance:"AKS1",rank:362,pts:216000},
+  {id:9407272,name:"TSGM Farm 6",alliance:"AKS1",rank:363,pts:216000},
+  {id:9403562,name:"TSGM Farm 5",alliance:"AKS1",rank:364,pts:216000},
+  {id:9394968,name:"TSGM Farm 3",alliance:"AKS1",rank:365,pts:216000},
+  {id:9394070,name:"TSGM Farm 4",alliance:"AKS1",rank:366,pts:216000},
+  {id:9379397,name:"TSGM Farm7",alliance:"AKS1",rank:367,pts:216000},
+  {id:9369975,name:"TSGM Farm 15",alliance:"AKS1",rank:368,pts:216000},
+  {id:9342657,name:"TSGM Farm 16",alliance:"AKS1",rank:369,pts:216000},
+  {id:9309477,name:"TSGM farm 17",alliance:"AKS1",rank:370,pts:216000},
+  {id:9244914,name:"TSGM Farm 8",alliance:"AKS1",rank:371,pts:216000},
+  {id:9232992,name:"TSGM Farm 9",alliance:"AKS1",rank:372,pts:216000},
+  {id:8040398,name:"ᵛᶰ PANCAKE S2 AK",alliance:"AKS1",rank:373,pts:216000},
+  {id:5437149,name:"MiniMarti",alliance:"S2AK",rank:359,pts:216000},
+  {id:14721436,name:"MiniMartinus",alliance:"S2AK",rank:360,pts:216000},
+  {id:13055477,name:"ProBeO",alliance:"S2AK",rank:375,pts:212800},
+  {id:8943831,name:"GPMN 30 04",alliance:"S2AK",rank:376,pts:211200},
+  {id:9242044,name:"TSGM Farm 10",alliance:"AKS1",rank:381,pts:208000},
+  {id:20048730,name:"MrMartiniz",alliance:"S2AK",rank:392,pts:184000},
+  {id:17512390,name:"Zoul farm",alliance:"S2AK",rank:397,pts:172800},
+  {id:739698,name:"fiX21",alliance:"S2AK",rank:400,pts:171200},
+  {id:9286981,name:"ˣᵃᵘSangKurianG 1",alliance:"S2AK",rank:401,pts:168000},
+  {id:3836445,name:"TSGM Farm 32",alliance:"AKS1",rank:402,pts:168000},
+  {id:16573322,name:"MrMartinus",alliance:"S2AK",rank:409,pts:160000},
+  {id:7380474,name:"LordZero102",alliance:"R-P",rank:429,pts:132000},
+  {id:7710684,name:"TSGMS2 bank",alliance:"AKS3",rank:435,pts:125400},
+  {id:10672791,name:"TSGM Farm 41",alliance:"AKS1",rank:441,pts:120000},
+  {id:10314283,name:"TSGM Farm 42",alliance:"AKS1",rank:442,pts:120000},
+  {id:10276262,name:"TSGM Farm 43",alliance:"AKS1",rank:443,pts:120000},
+  {id:10035304,name:"TSGM Farm 45",alliance:"AKS1",rank:444,pts:120000},
+  {id:9567068,name:"TSGM Farm 24",alliance:"AKS1",rank:447,pts:120000},
+  {id:9451567,name:"TSGM Farm 22",alliance:"AKS1",rank:448,pts:120000},
+  {id:9429937,name:"TSGM Farm29",alliance:"AKS1",rank:449,pts:120000},
+  {id:9311265,name:"TSGM Farm 27",alliance:"AKS1",rank:450,pts:120000},
+  {id:9440860,name:"TSGM Farm 23",alliance:"AKS1",rank:455,pts:112000},
+  {id:10766747,name:"TSGM Farm 26",alliance:"AKS1",rank:456,pts:112000},
+  {id:1394075,name:"ᴮᴸᴬᶜᴷ Yunus",alliance:"S2AK",rank:463,pts:107400},
+  {id:10535934,name:"TSGM Farm 44",alliance:"AKS1",rank:469,pts:104000},
+  {id:9432809,name:"TSGM Farm30",alliance:"AKS1",rank:473,pts:104000},
+  {id:9326350,name:"DrkBlsmmᶠᵃʳᵐ",alliance:"S2AK",rank:475,pts:101200},
+  {id:7203693,name:"FeiFarm1",alliance:"S2AK",rank:479,pts:98200},
+  {id:12933602,name:"๖Ni 6 Tuổi",alliance:"S2AK",rank:484,pts:96000},
+  {id:9271038,name:"TSGM Farm 21",alliance:"AKS1",rank:488,pts:96000},
+  {id:776544,name:"Supau",alliance:"S2AK",rank:491,pts:89000},
+  {id:9440871,name:"TSGM Farm 25",alliance:"AKS1",rank:501,pts:88000},
+  {id:1371742,name:"TSGMS2 bank 2",alliance:"AKS2",rank:511,pts:74800},
+  {id:7350670,name:"HANUMAN",alliance:"S2AK",rank:514,pts:72000},
+  {id:9473082,name:"hieuz one",alliance:"S2AK",rank:533,pts:60000},
+  {id:9514867,name:"ᴼɢ VuHLN",alliance:"S2AK",rank:556,pts:48000},
+  {id:11253310,name:"ᵛᶰシ DUSTIN S2 AK",alliance:"S2AK",rank:573,pts:44000},
+  {id:8801654,name:"ᵛᶰシ THANOS",alliance:"S2AK",rank:572,pts:44000},
+  // inactive
+  {id:7357822,name:"Ерутан ривол",alliance:"",rank:999,pts:0},
+  {id:7354546,name:"REBIRTH WHITE",alliance:"",rank:999,pts:0},
+  {id:12966478,name:"April Moon",alliance:"",rank:999,pts:0},
+  {id:12949561,name:"Nphuc",alliance:"",rank:999,pts:0},
+  {id:4199850,name:"ᵀᴴᴱSupreme亗",alliance:"",rank:999,pts:0},
+  {id:12210493,name:"ᴮᵃᵇᶦSylus",alliance:"",rank:999,pts:0},
+  {id:5460393,name:"Hamsterᴮᴮ",alliance:"",rank:999,pts:0},
+  {id:9194902,name:"Ngày lọ 7 lần",alliance:"",rank:999,pts:0},
+  {id:7342579,name:"шейк",alliance:"",rank:999,pts:0},
+  {id:12042583,name:"ᵛᶰThorne",alliance:"",rank:999,pts:0},
+  {id:8923361,name:"HAYABUSHA",alliance:"",rank:999,pts:0},
+  {id:1632197,name:"DEAW JW",alliance:"",rank:999,pts:0},
+  {id:5462143,name:"Setzeroᴮᵃᵈᴮᵒʸ",alliance:"",rank:999,pts:0},
+];
+
+const maxPts = Math.max(...players.map(p=>p.pts));
+
+// Render server grid
+const serverGrid = document.getElementById('serverGrid');
+servers.forEach((s,i) => {
+  const cls = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+  serverGrid.innerHTML += `
+    <div class="server-card ${cls}">
+      <div class="server-rank">#${s.rank}</div>
+      <div class="server-info">
+        <div class="server-id"><span>SERVER</span>${s.id}</div>
+        <div class="server-pts">${s.pts.toLocaleString()}</div>
+        <div class="server-pts-label">điểm</div>
+      </div>
+    </div>`;
+});
+
+// State
+let currentFilter = 'all';
+let currentSort = 'rank';
+let sortDir = 1;
+let searchVal = '';
+
+function getRankClass(r) {
+  if(r===1) return 'top1';
+  if(r===2) return 'top2';
+  if(r===3) return 'top3';
+  if(r<=10) return 'top10';
+  if(r===999) return 'inactive';
+  return 'normal';
+}
+
+function getPtsClass(pts) {
+  if(pts===0) return 'pts-zero';
+  if(pts>=1000000) return 'pts-high';
+  if(pts>=200000) return 'pts-mid';
+  return 'pts-low';
+}
+
+function getAllianceClass(a) {
+  if(!a) return 'tag-none';
+  if(a==='R-P') return 'tag-RP';
+  return 'tag-'+a;
+}
+
+function render() {
+  let data = [...players];
+
+  // Filter
+  if(currentFilter==='active') data = data.filter(p=>p.pts>0);
+  else if(currentFilter!=='all') data = data.filter(p=>p.alliance===currentFilter);
+
+  // Search
+  if(searchVal) data = data.filter(p=>p.name.toLowerCase().includes(searchVal.toLowerCase()));
+
+  // Sort
+  data.sort((a,b)=>{
+    let v = 0;
+    if(currentSort==='rank') v=a.rank-b.rank;
+    else if(currentSort==='name') v=a.name.localeCompare(b.name);
+    else if(currentSort==='alliance') v=a.alliance.localeCompare(b.alliance);
+    else if(currentSort==='pts') v=b.pts-a.pts;
+    return v * sortDir;
+  });
+
+  document.getElementById('countBadge').textContent = `[${data.length}]`;
+
+  const tbody = document.getElementById('playerBody');
+  tbody.innerHTML = data.map((p,i) => {
+    const rk = getRankClass(p.rank);
+    const isInactive = p.rank===999;
+    const barW = p.pts>0 ? Math.round((p.pts/maxPts)*100) : 0;
+    return `<tr style="animation-delay:${i*0.012}s">
+      <td><span class="rank-badge ${rk}">${p.rank===999?'—':p.rank}</span></td>
+      <td><span class="player-name ${isInactive?'inactive':''}">${p.name}</span></td>
+      <td><span class="alliance-tag ${getAllianceClass(p.alliance)}">${p.alliance||'—'}</span></td>
+      <td class="pts-cell">
+        <span class="${getPtsClass(p.pts)}">${p.pts>0?p.pts.toLocaleString():'—'}</span>
+        <div class="pts-bar"><div class="pts-bar-fill" style="width:${barW}%"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Stats
+  const active = players.filter(p=>p.pts>0);
+  const s2ak = players.filter(p=>p.alliance==='S2AK'&&p.pts>0);
+  const s2akTotal = s2ak.reduce((a,p)=>a+p.pts,0);
+  document.getElementById('statsFooter').innerHTML = `
+    <div class="stat-pill">Người Chơi <strong>${players.length}</strong></div>
+    <div class="stat-pill">Đang HĐ <strong>${active.length}</strong></div>
+    <div class="stat-pill">S2AK <strong>${s2ak.length}</strong> thành viên</div>
+    <div class="stat-pill">S2AK Điểm <strong>${s2akTotal.toLocaleString()}</strong></div>
+    <div class="stat-pill">Hạng 1 <strong>${players.find(p=>p.rank===1)?.name||'—'}</strong></div>
+  `;
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+// Search
+document.getElementById('searchBox').addEventListener('input', e => {
+  searchVal = e.target.value;
+  render();
+});
+
+// Sort
+document.querySelectorAll('.player-table th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    document.querySelectorAll('.player-table th').forEach(t=>t.classList.remove('sorted'));
+    if(currentSort===th.dataset.sort) sortDir*=-1;
+    else { currentSort=th.dataset.sort; sortDir=1; }
+    th.classList.add('sorted');
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
