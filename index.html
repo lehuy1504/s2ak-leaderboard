@@ -502,6 +502,7 @@
         <tr>
           <th data-sort="stt" style="width:44px">STT</th>
           <th data-sort="rank" class="sorted" style="width:70px">HẠNG ▾</th>
+          <th data-sort="id" style="width:90px">ID</th>
           <th data-sort="name" style="min-width:160px">TÊN</th>
           <th data-sort="alliance" style="width:90px">LIÊN MINH</th>
           <th data-sort="pts" style="text-align:right;width:160px">ĐIỂM</th>
@@ -761,7 +762,7 @@ function render() {
   data.sort((a,b)=>{
     let v = 0;
     if(currentSort==='stt') v=a.stt-b.stt;
-    else if(currentSort==='rank') v=a.rank-b.rank;
+    else if(currentSort==='id') v=a.id-b.id;
     else if(currentSort==='name') v=a.name.localeCompare(b.name);
     else if(currentSort==='alliance') v=a.alliance.localeCompare(b.alliance);
     else if(currentSort==='pts') v=b.pts-a.pts;
@@ -778,6 +779,7 @@ function render() {
     return `<tr style="animation-delay:${i*0.012}s">
       <td style="color:var(--muted);font-size:0.78rem;text-align:center;font-family:var(--font-mono)">${p.rank===999?'—':p.stt}</td>
       <td><span class="rank-badge ${rk}">${p.rank===999?'—':p.rank}</span></td>
+      <td style="color:var(--muted);font-size:0.85rem;font-family:var(--font-mono)">${p.id}</td>
       <td><span class="player-name ${isInactive?'inactive':''}">${p.name}</span></td>
       <td><span class="alliance-tag ${getAllianceClass(p.alliance)}">${p.alliance||'—'}</span></td>
       <td class="pts-cell">
@@ -794,7 +796,7 @@ function render() {
     const total = data.reduce((a,p) => a+p.pts, 0);
     const active = data.filter(p => p.pts > 0).length;
     summaryEl.innerHTML = `<tr>
-      <td colspan="5">
+      <td colspan="6">
         <span class="summary-label">KẾT QUẢ &nbsp;·&nbsp; </span>
         <strong>${data.length}</strong> người chơi
         &nbsp;·&nbsp;
