@@ -443,6 +443,17 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
 
+  #searchSummary tr td {
+    padding: 10px 12px;
+    border-top: 2px solid rgba(0,229,255,0.25);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    background: rgba(0,229,255,0.04);
+  }
+  #searchSummary .summary-label { color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; }
+  #searchSummary .summary-total { color: var(--gold); font-size: 1rem; font-weight: 700; }
+
   @media (max-width: 600px) {
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .player-table { min-width: 520px; }
@@ -497,6 +508,7 @@
         </tr>
       </thead>
       <tbody id="playerBody"></tbody>
+      <tfoot id="searchSummary"></tfoot>
     </table>
   </div>
 
@@ -774,6 +786,26 @@ function render() {
       </td>
     </tr>`;
   }).join('');
+
+  // Search/filter summary
+  const summaryEl = document.getElementById('searchSummary');
+  const isFiltered = searchVal || currentFilter !== 'all';
+  if (isFiltered && data.length > 0) {
+    const total = data.reduce((a,p) => a+p.pts, 0);
+    const active = data.filter(p => p.pts > 0).length;
+    summaryEl.innerHTML = `<tr>
+      <td colspan="5">
+        <span class="summary-label">KẾT QUẢ &nbsp;·&nbsp; </span>
+        <strong>${data.length}</strong> người chơi
+        &nbsp;·&nbsp;
+        <span class="summary-label">TỔNG ĐIỂM &nbsp;</span>
+        <span class="summary-total">${total.toLocaleString()}</span>
+        ${searchVal ? `&nbsp;·&nbsp;<span class="summary-label">TỪ KHOÁ &nbsp;</span><strong style="color:var(--accent)">"${searchVal}"</strong>` : ''}
+      </td>
+    </tr>`;
+  } else {
+    summaryEl.innerHTML = '';
+  }
 
   // Stats
   const active = players.filter(p=>p.pts>0);
